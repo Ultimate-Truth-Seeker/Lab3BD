@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Producto{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Producto</h1>
+  <form method="post">
+    {% csrf_token %}
+    <div class="card mb-3 p-3">
+      {{ form.non_field_errors }}
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          {{ form.name.label_tag }}
+          {{ form.name }}
+          {{ form.name.errors }}
+        </div>
+        <div class="form-group col-md-6">
+          {{ form.sku.label_tag }}
+          {{ form.sku }}
+          {{ form.sku.errors }}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          {{ form.status.label_tag }}
+          {{ form.status }}
+          {{ form.status.errors }}
+        </div>
+        <div class="form-group col-md-6">
+          {{ form.category.label_tag }}
+          {{ form.category }}
+          {{ form.category.errors }}
+        </div>
+      </div>
+    </div>
+
+    <h2>Etiquetas asociadas</h2>
+    {{ formset.management_form }}
+    <div id="form-container" class="card p-3 mb-3">
+      {% for fs in formset %}
+        {# este hidden input le indica a Django el PK de la instancia #}
+        {{ fs.id }}
+        <div class="form-row align-items-end formset-row mb-2 border-bottom pb-2">
+            <div class="form-group col-md-6">
+            {{ fs.tag.label_tag }}
+            {{ fs.tag }}
+            {{ fs.tag.errors }}
+            </div>
+            <div class="form-group col-md-3">
+            {{ fs.relevance.label_tag }}
+            {{ fs.relevance }}
+            {{ fs.relevance.errors }}
+            </div>
+            <div class="form-group col-md-3">
+            {{ fs.DELETE }} <label for="{{ fs.DELETE.id_for_label }}">Eliminar</label>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button type="button" class="btn btn-sm btn-secondary mb-3" id="add-more">
+      Agregar otra etiqueta
+    </button>
+
+    <div>
+      <button type="submit" class="btn btn-success">Guardar</button>
+      <a href="{% url 'product_list' %}" class="btn btn-link">Cancelar</a>
+    </div>
+    <div id="empty-form-row" class="d-none">
+    <div class="form-row align-items-end formset-row mb-2 border-bottom pb-2">
+      <div class="form-group col-md-6">
+        {{ formset.empty_form.tag.label_tag }}
+        {{ formset.empty_form.tag }}
+      </div>
+      <div class="form-group col-md-3">
+        {{ formset.empty_form.relevance.label_tag }}
+        {{ formset.empty_form.relevance }}
+      </div>
+      <div class="form-group col-md-3">
+        {{ formset.empty_form.DELETE }}
+        <label for="{{ formset.empty_form.DELETE.id_for_label }}">Eliminar</label>
+      </div>
+    </div>
+  </div>
+  </form>
+</div>
+
+{# ——— JavaScript para añadir / eliminar dinámicamente ——————————————————— #}
+<script>
+  (function(){
+    const prefix     = '{{ formset.prefix }}';          // por defecto "producttag_set"
+    const totalInput = document.getElementById(`id_${prefix}-TOTAL_FORMS`);
+    const container  = document.getElementById('form-container');
+    
+    const emptyTemplate = document
+        .getElementById('empty-form-row')
+        .firstElementChild;  
+
+
+    document.getElementById('add-more').addEventListener('click', () => {
+      const formCount = parseInt(totalInput.value, 10);
+      
+      const newRow = emptyTemplate.cloneNode(true);
+      
+      newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, formCount);
+      
+      container.appendChild(newRow);
+      totalInput.value = formCount + 1;
+    });
+
+    // Delegación de evento para detectar clicks en checkboxes DELETE
+    container.addEventListener('change', (e) => {
+      if (!e.target.name.endsWith('-DELETE')) return;
+      // cuando se chequea DELETE, ocultamos la fila
+      const row = e.target.closest('.formset-row');
+      if (e.target.checked) {
+        row.style.display = 'none';
+      } else {
+        row.style.display = '';
+      }
+    });
+  })();
+</script>
+{% endblock %}
